@@ -10,16 +10,22 @@ class UserManager: ObservableObject {
     static let shared = UserManager()
     
     private init() {
-        // Load user data from UserDefaults if available
+        // Load user data and login state from UserDefaults
         loadUserData()
+        loadLoginState()
     }
     
-    func login(username: String, password: String) -> Bool {
+    func login(username: String, password: String, rememberMe: Bool = false) -> Bool {
         guard let savedUser = currentUser else { return false }
         if savedUser.username == username && savedUser.verifyPassword(password) {
             isLoggedIn = true
             isRegistered = true
             isPaired = savedUser.partnerId != nil
+            
+            if rememberMe {
+                // Save login state if remember me is enabled
+                saveLoginState()
+            }
             return true
         }
         return false
@@ -28,10 +34,11 @@ class UserManager: ObservableObject {
     func logout() {
         isLoggedIn = false
         isPaired = false
+        // Clear remembered login state
+        UserDefaults.standard.removeObject(forKey: "rememberedLogin")
     }
     
     private func loadUserData() {
-        // In a real app, you would load from Keychain or secure storage
         if let userData = UserDefaults.standard.data(forKey: "userData"),
            let user = try? JSONDecoder().decode(User.self, from: userData) {
             currentUser = user
@@ -41,8 +48,17 @@ class UserManager: ObservableObject {
         }
     }
     
+    private func loadLoginState() {
+        if UserDefaults.standard.bool(forKey: "rememberedLogin") {
+            isLoggedIn = true
+        }
+    }
+    
+    private func saveLoginState() {
+        UserDefaults.standard.set(true, forKey: "rememberedLogin")
+    }
+    
     func saveUserData() {
-        // In a real app, you would save to Keychain or secure storage
         if let user = currentUser,
            let userData = try? JSONEncoder().encode(user) {
             UserDefaults.standard.set(userData, forKey: "userData")

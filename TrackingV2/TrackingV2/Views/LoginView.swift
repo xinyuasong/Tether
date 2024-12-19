@@ -7,6 +7,7 @@ struct LoginView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var isNewUser = false
+    @State private var rememberMe = false
     
     var body: some View {
         NavigationView {
@@ -31,8 +32,18 @@ struct LoginView: View {
                     .textInputAutocapitalization(.never)
                     .padding(.horizontal)
                 
+                // Remember Me Toggle
+                HStack {
+                    Toggle(isOn: $rememberMe) {
+                        Text("Remember Me")
+                            .foregroundColor(.gray)
+                    }
+                    .toggleStyle(CheckboxToggleStyle())
+                }
+                .padding(.horizontal)
+                
                 Button(action: {
-                    if userManager.login(username: username, password: password) {
+                    if userManager.login(username: username, password: password, rememberMe: rememberMe) {
                         userManager.isLoggedIn = true
                     } else {
                         alertMessage = "Invalid username or password"
@@ -60,11 +71,26 @@ struct LoginView: View {
                 Spacer()
             }
             .padding()
-            .alert("error", isPresented: $showAlert) {
-                Button("ok", role: .cancel) { }
+            .alert("Error", isPresented: $showAlert) {
+                Button("OK", role: .cancel) { }
             } message: {
                 Text(alertMessage)
             }
+        }
+    }
+}
+
+// Custom Checkbox Toggle Style
+struct CheckboxToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack {
+            Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
+                .foregroundColor(configuration.isOn ? .blue : .gray)
+                .font(.system(size: 20))
+                .onTapGesture {
+                    configuration.isOn.toggle()
+                }
+            configuration.label
         }
     }
 } 
